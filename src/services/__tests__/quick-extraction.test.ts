@@ -113,4 +113,15 @@ describe('quickExtractFacts', () => {
     expect(facts.some((fact) => fact.fact.includes('Nate has had the turtles for 3 years now'))).toBe(true);
     expect(facts.some((fact) => fact.fact.includes('Sam had a check-up with Sam\'s doctor a few days ago'))).toBe(true);
   });
+
+  it('captures tournament wins from conversational first-person event sentences', () => {
+    const facts = quickExtractFacts(
+      [
+        '[Session date: 2022-08-22]',
+        'Nate: Woah Joanna, I won an international tournament yesterday! It was wild.',
+      ].join('\n'),
+    );
+
+    expect(facts.some((fact) => fact.fact.includes('won an international tournament yesterday (on August 21, 2022)'))).toBe(true);
+  });
 });
