@@ -133,4 +133,16 @@ describe('mergeSupplementalFacts', () => {
     expect(merged.some((fact) => fact.fact.includes('Nate has had the turtles for 3 years now'))).toBe(true);
     expect(merged.some((fact) => fact.fact.includes('Sam had a check-up with Sam\'s doctor a few days ago'))).toBe(true);
   });
+
+  it('backfills tournament-win facts when the primary extractor misses them', () => {
+    const merged = mergeSupplementalFacts(
+      [baseFact({ fact: 'As of August 22 2022, Nate makes a living as a professional gamer and is passionate about his career.' })],
+      [
+        '[Session date: 2022-08-22]',
+        'Nate: Woah Joanna, I won an international tournament yesterday! It was wild.',
+      ].join('\n'),
+    );
+
+    expect(merged.some((fact) => fact.fact.includes('won an international tournament yesterday (on August 21, 2022)'))).toBe(true);
+  });
 });

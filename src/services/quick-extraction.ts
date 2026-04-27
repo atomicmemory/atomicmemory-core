@@ -47,11 +47,11 @@ const MONTH_NAMES = [
 ];
 const SPEAKER_PREFIX_PATTERN = /^[A-Z][A-Za-z0-9' -]{1,40}:\s*/;
 const IMPLICIT_FIRST_PERSON_EVENT_PATTERN =
-  /^(?:started|starting|built|building|developed|developing|created|creating|launched|launching|opened|opening|accepted|receiv(?:ed|ing)|got|had|went|attended|visited|reading|posted|hosting|working|looking|planning|taking|took)\b/i;
+  /^(?:started|starting|built|building|developed|developing|created|creating|launched|launching|opened|opening|accepted|receiv(?:ed|ing)|got|had|went|attended|visited|reading|posted|hosting|working|looking|planning|taking|took|won|winning)\b/i;
 
 /** Patterns that indicate a user is stating a fact about themselves. */
 const FIRST_PERSON_PATTERNS = [
-  /\bI\s+(?:am|was|have|had|use|used|like|liked|prefer|preferred|love|loved|hate|hated|need|needed|want|wanted|work|worked|live|lived|study|studied|started|finished|completed|built|created|made|bought|got|moved|joined|left|quit|switched|tried|learned|know|knew|think|thought|believe|believed|feel|felt|plan|planned|decided|chose|picked|signed|enrolled|attended|visited|went|add|added|implement|implemented|submit|submitted|receive|received|take|took|score|scored|launch|launched|apply|applied|consider|considered|advise|advised|recommend|recommended|call|called|focus|focused|support|supported|find|found|design|designed)\b/i,
+  /\bI\s+(?:am|was|have|had|use|used|like|liked|prefer|preferred|love|loved|hate|hated|need|needed|want|wanted|work|worked|live|lived|study|studied|started|finished|completed|built|created|made|bought|got|moved|joined|left|quit|switched|tried|learned|know|knew|think|thought|believe|believed|feel|felt|plan|planned|decided|chose|picked|signed|enrolled|attended|visited|went|add|added|implement|implemented|submit|submitted|receive|received|take|took|score|scored|launch|launched|apply|applied|consider|considered|advise|advised|recommend|recommended|call|called|focus|focused|support|supported|find|found|design|designed|win|won)\b/i,
   /\bmy\s+(?:name|job|role|team|company|project|favorite|preference|goal|plan|background|experience|hobby|family|wife|husband|partner|son|daughter|kid|dog|cat|address|email|phone|stack|setup|workflow|necklace|book|books|song|songs|painting|photo|poster|library|store|pet|pets|bowl)\b/i,
   /\bwe\s+(?:use|used|have|had|built|created|switched|moved|started|decided|chose|plan|are|were)\b/i,
   /\bI['']m\s+(?:a|an|the|from|based|working|building|using|looking|trying|planning|learning|studying|interested|responsible|currently)\b/i,

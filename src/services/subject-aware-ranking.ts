@@ -8,7 +8,7 @@ import type { SearchResult } from '../db/repository-types.js';
 import type { SearchStore } from '../db/stores.js';
 import { buildTemporalFingerprint } from './temporal-fingerprint.js';
 import { fetchAndBoostKeywordCandidates } from './keyword-expansion.js';
-import { countKeywordMatches } from './query-keyword-matches.js';
+import { countKeywordMatches, normalizeKeywordToken } from './query-keyword-matches.js';
 
 const MONTH_NAMES = new Set([
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -23,11 +23,23 @@ const KEYWORD_STOP_WORDS = new Set([
   'when', 'what', 'where', 'why', 'how', 'who', 'which',
   'did', 'does', 'do', 'has', 'have', 'had',
   'her', 'his', 'their', 'the', 'a', 'an', 'at', 'in', 'on', 'to',
+  'and', 'between', 'first', 'second', 'many', 'much', 'months', 'month',
+  'weeks', 'week', 'years', 'year', 'days', 'day', 'lapsed', 'elapsed',
+  'passed', 'before', 'after',
 ]);
 const SUBJECT_MATCH_BONUS = 2;
+const EXTRA_SUBJECT_MATCH_BONUS = 0.75;
 const CONFLICT_SUBJECT_PENALTY = 0.25;
 const KEYWORD_MATCH_BONUS = 0.4;
 const SUBJECT_QUERY_LIMIT = 8;
+const TEMPORAL_PLANNING_PENALTY = 2.25;
+const TEMPORAL_EVENT_QUERY =
+  /\b(when|how long|how many months|how many years|how many weeks|how many days|between|first|second|before|after)\b/i;
+const PLANNING_MARKERS = [
+  'plan to', 'planned to', 'planning to', 'going to', 'will ', 'wants to',
+  'want to', 'thinking of', 'thinking about', 'considering', 'decided to make',
+  'make a new appointment', 'book a new appointment',
+];
 
 export interface SubjectRankingResult {
   subjects: string[];
@@ -42,9 +54,10 @@ export function applySubjectAwareRanking(query: string, results: SearchResult[])
   if (subjects.length === 0 && keywords.length === 0) {
     return { subjects: [], keywords: [], protectedFingerprints: [], results };
   }
+  const temporalEventQuery = TEMPORAL_EVENT_QUERY.test(query.toLowerCase());
 
   const scoredResults = results
-    .map((result) => scoreSubjectCandidate(result, subjects, keywords))
+    .map((result) => scoreSubjectCandidate(result, subjects, keywords, temporalEventQuery))
     .sort((left, right) => right.result.score - left.result.score);
 
   return {
@@ -84,15 +97,24 @@ interface ScoredSubjectCandidate {
   keywordMatches: number;
 }
 
-function scoreSubjectCandidate(result: SearchResult, subjects: string[], keywords: string[]): ScoredSubjectCandidate {
+function scoreSubjectCandidate(
+  result: SearchResult,
+  subjects: string[],
+  keywords: string[],
+  temporalEventQuery: boolean,
+): ScoredSubjectCandidate {
   const mentionedSubjects = extractMentionedSubjects(result.content);
-  const hasRequestedSubject = subjects.some((subject) => mentionedSubjects.includes(subject));
+  const requestedSubjectMatches = subjects.filter((subject) => mentionedSubjects.includes(subject)).length;
+  const hasRequestedSubject = requestedSubjectMatches > 0;
   const hasConflictingSubject = mentionedSubjects.some((subject) => !subjects.includes(subject));
   const keywordMatches = countKeywordMatches(result.content, keywords);
+  const planningPenalty = shouldPenalizePlanning(result.content, temporalEventQuery)
+    ? TEMPORAL_PLANNING_PENALTY
+    : 0;
   let score = result.score;
 
   if (hasRequestedSubject) {
-    score += SUBJECT_MATCH_BONUS;
+    score += SUBJECT_MATCH_BONUS + ((requestedSubjectMatches - 1) * EXTRA_SUBJECT_MATCH_BONUS);
   }
   if (hasConflictingSubject && !hasRequestedSubject) {
     score *= CONFLICT_SUBJECT_PENALTY;
@@ -100,6 +122,7 @@ function scoreSubjectCandidate(result: SearchResult, subjects: string[], keyword
   if (keywordMatches > 0) {
     score += keywordMatches * KEYWORD_MATCH_BONUS;
   }
+  score -= planningPenalty;
 
   return {
     result: score === result.score ? result : { ...result, score },
@@ -134,7 +157,15 @@ function extractQueryKeywords(query: string, subjects: string[]): string[] {
     .filter((token) => token.length > 2)
     .filter((token) => !KEYWORD_STOP_WORDS.has(token))
     .filter((token) => !subjectSet.has(token));
-  return [...new Set(tokens)];
+  const normalizedTokens = tokens
+    .map(normalizeKeywordToken)
+    .filter((token) => token.length > 2);
+  return [...new Set([
+    ...tokens,
+    ...normalizedTokens,
+    ...buildKeywordBigrams(tokens),
+    ...buildKeywordBigrams(normalizedTokens),
+  ])];
 }
 
 function extractQueryCandidates(query: string): string[] {
@@ -156,4 +187,19 @@ function buildProtectedFingerprints(scoredResults: ScoredSubjectCandidate[]): st
     .filter((item) => item.hasRequestedSubject && item.keywordMatches > 0)
     .slice(0, 2)
     .map((item) => buildTemporalFingerprint(item.result.content));
+}
+
+function buildKeywordBigrams(tokens: string[]): string[] {
+  const bigrams: string[] = [];
+  for (let i = 0; i < tokens.length - 1; i++) {
+    if (bigrams.length >= 4) break;
+    bigrams.push(`${tokens[i]} ${tokens[i + 1]}`);
+  }
+  return bigrams;
+}
+
+function shouldPenalizePlanning(content: string, temporalEventQuery: boolean): boolean {
+  if (!temporalEventQuery) return false;
+  const lower = content.toLowerCase();
+  return PLANNING_MARKERS.some((marker) => lower.includes(marker));
 }

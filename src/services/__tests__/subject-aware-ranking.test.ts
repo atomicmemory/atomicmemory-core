@@ -23,7 +23,9 @@ describe('applySubjectAwareRanking', () => {
     ]);
 
     expect(ranked.subjects).toEqual(['Gina']);
-    expect(ranked.keywords).toEqual(['lost', 'job', 'door', 'dash']);
+    expect(ranked.keywords).toEqual(expect.arrayContaining([
+      'lost', 'job', 'door', 'dash', 'door dash',
+    ]));
     expect(ranked.protectedFingerprints).toHaveLength(1);
     expect(ranked.results[0].id).toBe('gina');
   });
@@ -49,6 +51,55 @@ describe('applySubjectAwareRanking', () => {
 
   it('extracts subject and event anchors for exact keyword expansion', () => {
     expect(extractSubjectQueryAnchors('When Gina lost her job at Door Dash?'))
-      .toEqual(['Gina', 'lost', 'job', 'door', 'dash']);
+      .toEqual(['Gina', 'lost', 'job', 'door', 'dash', 'lost job', 'job door', 'door dash']);
+  });
+
+  it('drops temporal filler anchors but keeps high-signal bigrams', () => {
+    const anchors = extractSubjectQueryAnchors(
+      "How many months lapsed between Sam's first and second doctor's appointment?",
+    );
+
+    expect(anchors).toContain('Sams');
+    expect(anchors).toContain('appointment');
+    expect(anchors).toContain('doctor appointment');
+    expect(anchors).not.toContain('many');
+    expect(anchors).not.toContain('months');
+    expect(anchors).not.toContain('between');
+    expect(anchors).not.toContain('first');
+    expect(anchors).not.toContain('second');
+  });
+
+  it('adds normalized event variants for temporal subject anchors', () => {
+    const anchors = extractSubjectQueryAnchors(
+      'How many weeks passed between Maria adopting Coco and Shadow?',
+    );
+
+    expect(anchors).toContain('adopting');
+    expect(anchors).toContain('adopt');
+  });
+
+  it('penalizes planning-like later memories for temporal event queries', () => {
+    const ranked = applySubjectAwareRanking(
+      "How many months lapsed between Sam's first and second doctor's appointment?",
+      [
+        buildResult('plan', 'Sam decided to make a new appointment in January.', 1.1),
+        buildResult('done', 'Sam had a second doctor appointment after changing diet.', 0.6),
+      ],
+    );
+
+    expect(ranked.results[0].id).toBe('done');
+    expect(ranked.results[1].id).toBe('plan');
+  });
+
+  it('prefers memories that mention more of the requested endpoint anchors', () => {
+    const ranked = applySubjectAwareRanking(
+      'How many weeks passed between Maria adopting Coco and Shadow?',
+      [
+        buildResult('generic', 'Maria adopted a dog earlier this year.', 0.9),
+        buildResult('specific', 'Maria adopted Coco and felt instantly attached.', 0.4),
+      ],
+    );
+
+    expect(ranked.results[0].id).toBe('specific');
   });
 });

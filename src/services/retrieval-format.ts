@@ -22,7 +22,7 @@ import { prefersAbstractAwareRetrieval } from './abstract-query-policy.js';
 import type { RetrievalMode } from './memory-service-types.js';
 import { escapeXml } from '../xml-escape.js';
 import { spansMultipleDates, buildTimelinePack, formatTimelinePack } from './timeline-pack.js';
-import { buildRepeatedEventEndpointBlock } from './temporal-endpoint-evidence.js';
+import { buildTemporalEvidenceBlock } from './temporal-endpoint-evidence.js';
 import { preserveQueryTermVisibility, sumAssignmentTokens } from './query-term-visibility.js';
 import { formatDateLabel, formatDuration } from './temporal-format.js';
 
@@ -318,11 +318,11 @@ export function formatTieredInjection(
   const sections = expandableIds
     ? [lines.join('\n'), `Expandable IDs: ${expandableIds}`]
     : [lines.join('\n')];
-  const repeatedEventEndpoints = buildRepeatedEventEndpointBlock(sorted, query);
-  const enrichedSections = repeatedEventEndpoints
-    ? [...sections, repeatedEventEndpoints]
-    : sections;
-  return appendTemporalSummary(enrichedSections, memories);
+  const temporalEvidenceBlock = buildTemporalEvidenceBlock(sorted, query);
+  if (temporalEvidenceBlock) {
+    return [...sections, temporalEvidenceBlock].join('\n\n');
+  }
+  return appendTemporalSummary(sections, memories);
 }
 
 function formatTieredLine(memory: SearchResult, tier: ContextTier): string {
@@ -373,13 +373,13 @@ export function buildInjection(
   const budget = tokenBudget ?? DEFAULT_INJECTION_TOKEN_BUDGET;
   const forceRichTopHit = prefersAbstractAwareRetrieval(mode, query);
 
-  // Compute the repeated-event endpoint block before tier assignment so
+  // Compute the temporal evidence block before tier assignment so
   // its token cost is subtracted from the assignment budget. Otherwise the
   // appended block silently exceeds the caller's budget and is missing
   // from estimatedContextTokens. The block is appended inside
   // formatTieredInjection; we just account for its tokens up front.
   const sortedForEndpoints = sortChronologically(deduplicated);
-  const endpointBlock = buildRepeatedEventEndpointBlock(sortedForEndpoints, query);
+  const endpointBlock = buildTemporalEvidenceBlock(sortedForEndpoints, query);
   const endpointTokens = endpointBlock ? estimateTokens(endpointBlock) : 0;
   const assignmentBudget = Math.max(0, budget - endpointTokens);
 

@@ -71,6 +71,15 @@ describe('isCurrentStateQuery', () => {
     expect(isCurrentStateQuery('How much weight have I lost so far?')).toBe(true);
   });
 
+  it('rejects temporal comparison quantity queries', () => {
+    expect(isCurrentStateQuery(
+      "How many months lapsed between Sam's first and second doctor's appointment?",
+    )).toBe(false);
+    expect(isCurrentStateQuery(
+      'How long did James and Samantha date before deciding to move in together?',
+    )).toBe(false);
+  });
+
   it('blocks quantity starters that contain historical markers', () => {
     expect(isCurrentStateQuery('How many things did I previously own?')).toBe(false);
     expect(isCurrentStateQuery('How often did I used to run?')).toBe(false);

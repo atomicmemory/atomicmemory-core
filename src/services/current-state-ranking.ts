@@ -30,6 +30,10 @@ const CURRENT_DOMAIN_MARKERS = [
  * itself implies current-state intent.
  */
 const QUANTITY_STARTERS = ['how many ', 'how often ', 'how long ', 'how much '];
+const TEMPORAL_COMPARISON_MARKERS = [
+  ' between ', ' first ', ' second ', ' before ', ' after ',
+  ' elapsed ', ' lapsed ', ' passed ',
+];
 
 /**
  * Markers in result content indicating the fact describes current state.
@@ -127,7 +131,10 @@ export function isCurrentStateQuery(query: string): boolean {
   const padded = ` ${query.toLowerCase()} `;
   if (HISTORICAL_QUERY_MARKERS.some((marker) => padded.includes(marker))) return false;
   if (CURRENT_QUERY_MARKERS.some((marker) => padded.includes(marker))) return true;
-  if (QUANTITY_STARTERS.some((starter) => padded.trimStart().startsWith(starter))) return true;
+  if (QUANTITY_STARTERS.some((starter) => padded.trimStart().startsWith(starter))) {
+    const isTemporalComparison = TEMPORAL_COMPARISON_MARKERS.some((marker) => padded.includes(marker));
+    return !isTemporalComparison;
+  }
   const startsWithQuestionWord = CURRENT_QUERY_STARTERS.some((starter) => padded.startsWith(starter));
   return startsWithQuestionWord && CURRENT_DOMAIN_MARKERS.some((marker) => padded.includes(marker));
 }
