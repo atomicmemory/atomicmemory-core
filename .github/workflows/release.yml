@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: atomicmem
+          POSTGRES_PASSWORD: atomicmem
+          POSTGRES_DB: atomicmem_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U atomicmem"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://atomicmem:atomicmem@localhost:5432/atomicmem_test
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so `fallow audit` can walk back to main.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Code health (fallow audit vs baselines)
+        # Tag pushes: compare against main so the release's diff is
+        # scoped the same way PRs are. `origin/main` is available
+        # because fetch-depth: 0 pulled the full history.
+        run: npx fallow audit
+          --health-baseline=.fallow/health-baseline.json
+          --dupes-baseline=.fallow/dupes-baseline.json
+          --base=origin/main
+          --no-cache
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify Docker build
+        run: docker build -t atomicmemory-core:${{ github.ref_name }} .
+
+      - name: Prepare .env for smoke test
+        run: cp .env.example .env
+
+      - name: Docker smoke test
+        run: npm run test:docker-smoke
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

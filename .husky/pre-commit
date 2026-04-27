@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Fallow gate: block commits that introduce new complexity or duplication
+# beyond the frozen baselines in .fallow/. Mirrors CI's --base selection
+# by following origin/HEAD (the repo's actual default branch), so the
+# hook adapts if the default changes and doesn't silently diverge from
+# the CI step's `github.base_ref || default_branch` fallback.
+# Non-default-target PRs (e.g. a branch targeting staging while origin
+# defaults to main) will diff differently here than CI will — that's
+# inherent to pre-commit since the eventual PR target isn't known yet.
+# If origin/<default> is behind, run `git fetch` first. To lower a
+# baseline, refactor the flagged code and regenerate:
+#   npx fallow health --save-baseline=.fallow/health-baseline.json
+#   npx fallow dupes  --save-baseline=.fallow/dupes-baseline.json
+BASE=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)
+BASE=${BASE:-origin/main}
+npx fallow audit \
+  --health-baseline=.fallow/health-baseline.json \
+  --dupes-baseline=.fallow/dupes-baseline.json \
+  --base="$BASE"

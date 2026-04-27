@@ -1,0 +1,97 @@
+{
+  "name": "@atomicmemory/atomicmemory-core",
+  "version": "1.0.0",
+  "description": "Open-source memory engine for AI applications — semantic retrieval, AUDN mutation, and contradiction-safe claim versioning.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "AtomicMemory <hello@atomicmemory.ai>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atomicmemory/Atomicmemory-core.git"
+  },
+  "homepage": "https://github.com/atomicmemory/Atomicmemory-core",
+  "bugs": {
+    "url": "https://github.com/atomicmemory/Atomicmemory-core/issues"
+  },
+  "keywords": [
+    "memory",
+    "ai",
+    "llm",
+    "semantic-search",
+    "pgvector",
+    "embeddings",
+    "context",
+    "retrieval"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
+    "./db/*": {
+      "types": "./dist/db/*.d.ts",
+      "import": "./dist/db/*.js"
+    },
+    "./services/*": {
+      "types": "./dist/services/*.d.ts",
+      "import": "./dist/services/*.js"
+    },
+    "./openapi.json": "./openapi.json",
+    "./openapi.yaml": "./openapi.yaml"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "openapi.json",
+    "openapi.yaml"
+  ],
+  "scripts": {
+    "dev": "dotenv -e .env -- tsx watch src/server.ts",
+    "start": "dotenv -e .env -- tsx src/server.ts",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "generate:openapi": "tsx scripts/generate-openapi.ts",
+    "check:openapi": "npm run generate:openapi && git diff --exit-code openapi.yaml openapi.json",
+    "prepublishOnly": "npm run generate:openapi && npm run build",
+    "test": "dotenv -e .env.test -- vitest run --reporter verbose",
+    "test:watch": "dotenv -e .env.test -- vitest --reporter verbose",
+    "test:deployment": "vitest run src/__tests__/deployment-config.test.ts --reporter verbose",
+    "test:docker-smoke": "./scripts/docker-smoke-test.sh",
+    "test:schema": "tests/schema/run-schemathesis.sh",
+    "migrate": "dotenv -e .env -- tsx src/db/migrate.ts",
+    "migrate:test": "dotenv -e .env.test -- tsx src/db/migrate.ts",
+    "prepare": "husky || true"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
+    "@huggingface/transformers": "^3.8.1",
+    "express": "^5.1.0",
+    "openai": "^4.80.0",
+    "pg": "^8.18.0",
+    "pgvector": "^0.2.0",
+    "undici": "^7.24.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.0",
+    "dotenv-cli": "^8.0.0",
+    "husky": "^9.1.7",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.3",
+    "yaml": "^2.8.3"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "finding_counts": {
+    "src/db/repository-claims.ts": {
+      "crap_high": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "src/db/repository-write.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "src/services/__tests__/poisoning-dataset.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "src/services/atomicmem-uri.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "src/services/deferred-audn.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "src/services/embedding.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "src/services/extraction-enrichment.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "src/services/llm.ts": {
+      "crap_high": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 3
+      }
+    },
+    "src/services/memory-audn.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "src/services/supplemental-extraction.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    }
+  },
+  "production_coverage_findings": [],
+  "target_keys": [
+    "src/services/conflict-policy.ts:high impact",
+    "src/services/composite-dedup.ts:high impact"
+  ]
+}

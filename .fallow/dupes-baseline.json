@@ -1,0 +1,33 @@
+{
+  "clone_groups": [
+    "src/__tests__/memory-route-config-override.test.ts:77-80|src/services/__tests__/scoped-dispatch.test.ts:43-52",
+    "src/__tests__/memory-route-config-override.test.ts:169-173|src/__tests__/memory-route-config-override.test.ts:194-198",
+    "src/__tests__/memory-route-config-seam.test.ts:130-135|src/app/__tests__/composed-boot-parity.test.ts:117-122",
+    "src/__tests__/route-validation.test.ts:247-254|src/__tests__/route-validation.test.ts:79-86",
+    "src/__tests__/smoke.test.ts:11-24|src/app/__tests__/research-consumption-seams.test.ts:22-35",
+    "src/__tests__/smoke.test.ts:48-52|src/app/__tests__/research-consumption-seams.test.ts:57-61",
+    "src/app/__tests__/composed-boot-parity.test.ts:73-82|src/app/__tests__/composed-boot-parity.test.ts:89-101",
+    "src/db/memory-repository.ts:98-119|src/db/pg-memory-store.ts:51-52",
+    "src/db/memory-repository.ts:101-117|src/db/pg-memory-store.ts:52-52|src/db/stores.ts:53-60",
+    "src/db/memory-repository.ts:131-139|src/db/pg-memory-store.ts:36-38",
+    "src/db/memory-repository.ts:171-187|src/db/pg-search-store.ts:26-42",
+    "src/db/memory-repository.ts:205-217|src/db/pg-memory-store.ts:40-41",
+    "src/db/memory-repository.ts:230-238|src/db/pg-memory-store.ts:41-42",
+    "src/db/memory-repository.ts:283-291|src/db/pg-representation-store.ts:25-27",
+    "src/db/memory-repository.ts:291-299|src/db/pg-representation-store.ts:23-25",
+    "src/db/memory-repository.ts:337-349|src/db/pg-search-store.ts:47-51",
+    "src/db/memory-repository.ts:353-377|src/db/pg-search-store.ts:55-62",
+    "src/db/repository-claims.ts:360-374|src/services/memory-lineage.ts:67-81",
+    "src/schemas/__tests__/agents.test.ts:18-26|src/schemas/__tests__/memories.test.ts:22-27",
+    "src/schemas/__tests__/config-override.test.ts:112-121|src/schemas/__tests__/config-override.test.ts:83-92",
+    "src/schemas/agents.ts:36-41|src/schemas/memories.ts:88-93",
+    "src/services/__tests__/ingest-fact-pipeline-workspace.test.ts:14-24|src/services/__tests__/memory-ingest-runtime-config.test.ts:51-63",
+    "src/services/__tests__/ingest-fact-pipeline-workspace.test.ts:22-27|src/services/__tests__/memory-ingest-runtime-config.test.ts:73-78|src/services/__tests__/search-pipeline-runtime-config.test.ts:72-77",
+    "src/services/__tests__/memory-ingest-runtime-config.test.ts:139-158|src/services/__tests__/memory-ingest-runtime-config.test.ts:178-194",
+    "src/services/__tests__/memory-ingest-runtime-config.test.ts:209-229|src/services/__tests__/memory-ingest-runtime-config.test.ts:251-271",
+    "src/services/__tests__/memory-service-config.test.ts:133-150|src/services/__tests__/memory-service-config.test.ts:174-191|src/services/__tests__/memory-service-config.test.ts:97-114",
+    "src/services/ingest-fact-pipeline.ts:167-170|src/services/ingest-fact-pipeline.ts:83-87",
+    "src/services/ingest-fact-pipeline.ts:127-131|src/services/ingest-fact-pipeline.ts:165-172",
+    "src/services/memory-lineage.ts:284-291|src/services/memory-lineage.ts:319-326"
+  ]
+}

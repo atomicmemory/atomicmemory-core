@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/atomicmemory/Atomicmemory-core/tree/main/docs
+    about: API reference and architecture docs
+  - name: Discussions
+    url: https://github.com/atomicmemory/Atomicmemory-core/discussions
+    about: Ask questions, share ideas, get help

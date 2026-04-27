@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: atomicmem
+          POSTGRES_PASSWORD: atomicmem
+          POSTGRES_DB: atomicmem_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U atomicmem"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://atomicmem:atomicmem@localhost:5432/atomicmem_test
+      OPENAI_API_KEY: test-placeholder
+      EMBEDDING_DIMENSIONS: 1024
+      PORT: 3051
+      # Matches `.env.test` (gitignored). `PUT /v1/memories/config` is gated
+      # by this startup-validated flag and returns 410 Gone when unset — the
+      # composed-boot-parity test asserts 200, so CI must enable it like
+      # local runs do. Production deployments leave it unset.
+      CORE_RUNTIME_CONFIG_MUTATION_ENABLED: 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so `fallow audit` can compute `--base main ... HEAD`
+          # against a real ref. Default fetch-depth: 1 leaves only HEAD and
+          # audit fails with "could not detect base branch".
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: OpenAPI spec is up-to-date
+        # Regenerates openapi.yaml + openapi.json from the Zod schemas
+        # and fails if they differ from what's committed. Ensures no PR
+        # lands with schemas changed but spec not regenerated.
+        run: npm run check:openapi
+
+      - name: Code health (fallow audit vs baselines)
+        # Audit changed files against frozen baselines in .fallow/. New
+        # complexity / duplication regressions fail; pre-existing
+        # baseline-level debt is grandfathered. Refactor + regenerate the
+        # baseline to lower the floor — the ratchet step below enforces
+        # monotonic improvement.
+        run: npx fallow audit
+          --health-baseline=.fallow/health-baseline.json
+          --dupes-baseline=.fallow/dupes-baseline.json
+          --base=origin/${{ github.base_ref || github.event.repository.default_branch }}
+          --no-cache
+
+      - name: Baseline ratchet (shrink-only)
+        # Blocks PRs that grow .fallow/*-baseline.json. Refactors that
+        # drop entries pass freely; new entries fail even if they'd be
+        # inside the grandfathered audit. Ensures debt goes monotonically
+        # to zero over time.
+        run: ./scripts/check-baseline-ratchet.sh origin/${{ github.base_ref || github.event.repository.default_branch }}
+
+      - name: Run tests
+        run: npm test
+
+  schema-fuzz:
+    # Property-based fuzzing of openapi.yaml via Schemathesis. Pulls up the
+    # smoke-isolated docker-compose (stub-LLM mode), runs the spec against
+    # the live app, tears down. Catches wire-shape regressions without
+    # re-implementing per-route assertions.
+    #
+    # Bake-window posture: continue-on-error: true for 1-2 weeks while the
+    # baseline noise gets tuned out. Flip to a hard gate in a follow-up PR
+    # after the signal is stable.
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Schemathesis
+        run: pip install 'schemathesis==3.*'
+
+      - name: Run Schemathesis against openapi.yaml
+        run: bash tests/schema/run-schemathesis.sh
+
+      - name: Upload Schemathesis diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schemathesis-diagnostics
+          # Three artifacts the runner writes (run-schemathesis.sh:140-142):
+          # - schemathesis-report.json  — Schemathesis.io-format tarball (despite the .json suffix)
+          # - schemathesis-report.xml   — JUnit XML for human-readable diagnostics
+          # - schemathesis-cassette.yaml — VCR cassette for failure replay
+          path: |
+            schemathesis-report.json
+            schemathesis-report.xml
+            schemathesis-cassette.yaml
+          if-no-files-found: ignore
